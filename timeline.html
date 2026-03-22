@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jornada PCD | B&W Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #000000;
+            --bg-panel: #0a0a0a;
+            --text-main: #ffffff;
+            --text-secondary: #a0a0a0;
+            --border: #222222;
+            --font-title: 'Archivo Black', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --transition-slow: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            --transition-fast: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- Fundo Animado Sutil --- */
+        body::before {
+            content: "";
+            position: fixed;
+            width: 200%; height: 200%;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 100px 100px;
+            animation: gridMove 60s linear infinite;
+            z-index: -1;
+            mask-image: radial-gradient(circle, black, transparent 70%);
+        }
+
+        @keyframes gridMove {
+            from { transform: translate(0, 0); }
+            to { transform: translate(-100px, -100px); }
+        }
+
+        /* --- Header --- */
+        .main-header { position: absolute; top: 60px; text-align: center; z-index: 5; }
+        .main-header h1 {
+            font-family: var(--font-title);
+            font-size: 3.5rem; letter-spacing: 15px;
+            text-transform: uppercase; color: #fff;
+            position: relative; text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            margin-bottom: 5px; animation: titleFlicker 10s infinite;
+        }
+
+        .main-header .subtitle {
+            font-size: 0.7rem; letter-spacing: 6px;
+            color: var(--text-secondary); font-weight: 300; opacity: 0.8;
+        }
+
+        @keyframes titleFlicker {
+            0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% { opacity: 1; }
+            20%, 21.999%, 63%, 63.999%, 65%, 69.999% { opacity: 0.4; }
+        }
+
+        /* --- Menu Principal --- */
+        .main-menu {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 30px; width: 90%; max-width: 1200px;
+            transition: var(--transition-slow); z-index: 10;
+        }
+
+        .main-menu.hidden { opacity: 0; transform: scale(0.9); pointer-events: none; }
+
+        .menu-card {
+            background: var(--bg-panel); border: 1px solid var(--border);
+            padding: 50px 40px; border-radius: 4px; cursor: pointer;
+            transition: var(--transition-fast); position: relative;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            min-height: 300px; animation: cardEntrada 0.8s ease forwards; opacity: 0;
+        }
+
+        @keyframes cardEntrada {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .menu-card:nth-child(1) { animation-delay: 0.1s; }
+        .menu-card:nth-child(2) { animation-delay: 0.2s; }
+        .menu-card:nth-child(3) { animation-delay: 0.3s; }
+
+        .menu-card:hover { border-color: var(--text-main); background-color: #0f0f0f; transform: translateY(-5px); }
+
+        .menu-card span.number {
+            font-family: var(--font-title); font-size: 1.5rem;
+            color: #1a1a1a; position: absolute; top: 30px; left: 30px;
+        }
+
+        .menu-card:hover span.number { color: var(--text-main); }
+        .menu-card h2 { font-family: var(--font-title); font-size: 2.2rem; line-height: 1; text-transform: uppercase; margin-bottom: 10px; }
+        .menu-card p { color: var(--text-secondary); font-size: 0.9rem; letter-spacing: 1px; }
+
+        /* --- Visualizador de Tópicos --- */
+        .topic-viewer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 100;
+            display: flex; flex-direction: column;
+            opacity: 0; pointer-events: none;
+            transition: var(--transition-slow); transform: translateY(50px);
+        }
+
+        .topic-viewer.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .viewer-header { padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .viewer-header h3 { font-family: var(--font-title); text-transform: uppercase; letter-spacing: 3px; color: var(--text-secondary); }
+        .close-topic { background: none; border: 1px solid var(--border); color: var(--text-main); padding: 10px 20px; text-transform: uppercase; font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: var(--transition-fast); border-radius: 2px; }
+        .close-topic:hover { background: var(--text-main); color: var(--bg); }
+
+        .slides-container { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; padding: 50px; }
+        .slide { position: absolute; width: 90%; max-width: 1000px; text-align: center; opacity: 0; transform: translateX(100px); transition: var(--transition-slow); pointer-events: none; }
+        .slide.active { opacity: 1; transform: translateX(0); pointer-events: auto; }
+        .slide.exit { opacity: 0; transform: translateX(-100px); }
+
+        .slide h4 {
+            font-family: var(--font-title); font-size: 3.5rem;
+            text-transform: uppercase; line-height: 1; margin-bottom: 30px;
+            background: linear-gradient(to bottom, #fff 40%, #333 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .slide p { font-size: 1.3rem; color: var(--text-secondary); line-height: 1.6; max-width: 850px; margin: 0 auto; }
+
+        .viewer-controls { padding: 30px 50px; display: flex; justify-content: center; gap: 20px; border-top: 1px solid var(--border); }
+        .nav-btn { background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-main); padding: 15px 30px; cursor: pointer; text-transform: uppercase; font-weight: 700; transition: var(--transition-fast); }
+        .nav-btn:hover:not(:disabled) { border-color: var(--text-main); background-color: #fff; color: #000; }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* --- Footer --- */
+        .main-footer { position: absolute; bottom: 0; width: 100%; padding: 20px 50px; z-index: 5; background: linear-gradient(transparent, rgba(0,0,0,0.8)); }
+        .footer-line { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, #333, transparent); margin-bottom: 15px; }
+        .footer-content { display: flex; justify-content: space-between; align-items: center; font-size: 0.65rem; letter-spacing: 2px; color: var(--text-secondary); }
+        .highlight { color: #fff; font-weight: 800; }
+        .status-dot { width: 6px; height: 6px; background-color: #fff; border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 8px #fff; animation: pulseStatus 2s infinite; }
+        @keyframes pulseStatus { 0% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.2; transform: scale(0.8); } }
+    </style>
+</head>
+<body>
+
+    <div class="main-header">
+        <h1 data-text="CONSCIENTIZAÇÃO">CONSCIENTIZAÇÃO</h1>
+        <div class="subtitle">SISTEMA DE INFORMAÇÃO ACESSÍVEL</div>
+    </div>
+
+    <div class="main-menu" id="mainMenu">
+        <div class="menu-card" onclick="openTopic('pcd')">
+            <span class="number">01</span>
+            <h2>O QUE É<br>UMA PESSOA PCD?</h2>
+            <p>Definição e Conceitos Básicos</p>
+        </div>
+        <div class="menu-card" onclick="openTopic('como')">
+            <span class="number">02</span>
+            <h2>COMO<br>ACONTECE?</h2>
+            <p>Causas e Tipos de Deficiência</p>
+        </div>
+        <div class="menu-card" onclick="openTopic('ator')">
+            <span class="number">03</span>
+            <h2>ATOR /<br>EXEMPLO</h2>
+            <p>A História de Prichard Colón</p>
+        </div>
+    </div>
+
+    <div class="topic-viewer" id="topicViewer">
+        <div class="viewer-header">
+            <h3 id="viewerTopicTitle">Tópico</h3>
+            <button class="close-topic" onclick="closeTopic()">Fechar (Esc)</button>
+        </div>
+        <div class="slides-container" id="slidesContainer"></div>
+        <div class="viewer-controls">
+            <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">Anterior</button>
+            <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">Próximo</button>
+        </div>
+    </div>
+
+    <footer class="main-footer">
+        <div class="footer-line"></div>
+        <div class="footer-content">
+            <div style="display: flex; align-items: center;">
+                <span class="status-dot"></span>
+                <span>SISTEMA OPERACIONAL ATIVO</span>
+            </div>
+            <div>© 2026 <span class="highlight">FA&L</span> — 9ºB CEFAB</div>
+            <div style="opacity: 0.4;">V.2.0.4_BUILD</div>
+        </div>
+    </footer>
+
+    <script>
+    const topicsData = {
+       pcd: {
+    title: "Conceito PCD — Entendendo Pessoas com Deficiência",
+    slides: [
+        { 
+            title: "PCD:<br>O QUE É? ", 
+            text: "Pessoa com Deficiência. É alguém que possui impedimentos de longo prazo (físicos, mentais, intelectuais ou sensoriais)." 
+        },
+        { 
+            title: "NÃO É<br>DOENÇA", 
+            text: "A deficiência não é uma doença a ser curada, mas uma característica da pessoa. O foco deve ser na funcionalidade e na autonomia." 
+        },
+        { 
+            title: "A BARREIRA<br>É O MEIO", 
+            text: "O conceito moderno diz que a deficiência resulta da interação da pessoa com as barreiras do ambiente." 
+        }
+    ]
+},
+        como: {
+    title: "Como Acontece — Causas e Tipos de Deficiência",
+    slides: [
+        { 
+            title: "COMO<br>ACONTECE? — ENTENDENDO AS ORIGENS", 
+            text: "As deficiências podem ser divididas principalmente em dois grupos: Congênitas e Adquiridas." 
+        },
+        { 
+            title: "CONGÊNITA — NASCENDO COM DESAFIOS", 
+            text: "Quando a pessoa já nasce com a deficiência, por fatores genéticos ou problemas durante a gestação." 
+        },
+        { 
+            title: "ADQUIRIDA — DESAFIOS AO LONGO DA VIDA", 
+            text: "Quando ocorre durante a vida devido a acidentes, doenças ou violência." 
+        }
+    ]
+},
+        ator: {
+            title: "Prichard Colón",
+            slides: [
+               { 
+    title: "O AUGE<br>DO ATLETA", 
+    text: "Prichard Colón era mais do que um boxeador talentoso — ele era uma promessa viva de Porto Rico. Invicto, com reflexos rápidos e punhos potentes, conquistou fãs e admiradores com seu carisma dentro e fora do ringue. Cada luta mostrava não apenas sua força física, mas sua disciplina, inteligência tática e uma paixão que inspirava jovens atletas a sonhar alto. Ele parecia destinado a conquistar títulos mundiais, e o mundo do boxe já o via como uma lenda em formação." 
+  },
+   { 
+            title: "A LUTA<br>FATAL — O CONFLITO ENTRE GLÓRIA E RISCO NO RINGUE", 
+            text: "Em 2015, durante uma luta decisiva, golpes ilegais começaram a atingir Prichard na nuca — conhecidos como 'golpes de coelho'. Apesar do impacto evidente, o juiz permitiu que a luta continuasse, ignorando sinais claros de perigo. Cada golpe silencioso acumulava danos cerebrais profundos, que não eram visíveis na hora, mas que mudariam sua vida para sempre. O que começou como mais uma vitória planejada, terminou em tragédia, lembrando que no boxe, a linha entre glória e desastre é tênue." 
+        },
+        { 
+            title: "O VESTIÁRIO<br>E O COMA — O MOMENTO CRÍTICO QUE MUDOU SUA VIDA", 
+            text: "Ao final da luta, Prichard caiu inconsciente no vestiário. Emergência imediata, transporte para o hospital, diagnósticos devastadores: hemorragia cerebral severa. Ele entrou em coma e permaneceria 221 dias entre a vida e a morte. A cada dia, familiares, amigos e fãs acompanhavam com apreensão, enquanto médicos lutavam para salvar seu cérebro ferido. O ringue, que havia sido palco de sua ascensão, agora testemunhava o preço silencioso da violência permitida." 
+        },
+        { 
+            title: "O VÍDEO:<br>A FORÇA — REGISTROS DE SUA HABILIDADE E DEDICAÇÃO", 
+            text: "Existem imagens que permanecem na memória. Prichard Colón em ação, antes do acidente, mostrando toda sua técnica refinada, precisão e força bruta. Cada soco carregava o poder de anos de dedicação e treinos rigorosos. Assistir a esses registros é perceber o contraste entre o atleta imbatível e a fragilidade humana que se seguiu, uma lembrança da grandeza que ele sempre teve, mesmo nos momentos mais sombrios.", 
+            isVideo: true 
+        },
+        { 
+            title: "A NOVA<br>REALIDADE — ADAPTAÇÃO E SUPERAÇÃO DIÁRIA", 
+            text: "Hoje, Prichard sobrevive, mas sua vida mudou completamente. Cadeirante, depende inteiramente da mãe para cuidados básicos. As conquistas no ringue ficaram para trás, substituídas por uma luta diária pela dignidade e independência. Sua história provocou mudanças significativas nas regras do boxe internacional, garantindo maior proteção para os atletas e mostrando que a segurança no esporte não pode ser negligenciada. O mundo aprendeu uma lição amarga sobre responsabilidade e proteção." 
+        },
+        { 
+            title: "O ANTES<br>& DEPOIS — UMA HISTÓRIA DE CORAGEM, RESILIÊNCIA E INSPIRAÇÃO", 
+            text: "A trajetória de Prichard é um lembrete poderoso de que a deficiência pode atingir qualquer pessoa, em qualquer momento. Ele se tornou um símbolo de resistência e inspiração, lembrando que respeito, acessibilidade e empatia não são opcionais — são essenciais. Sua vida, antes cheia de glórias no ringue, e agora marcada pela superação diária, mostra a força da alma humana diante das adversidades. A história de Prichard é uma narrativa de coragem, transformação e esperança." , 
+            isComparison: true 
+  }
+            ]
+        }
+    };
+
+    let currentTopic = null;
+    let currentSlideIndex = 0;
+
+    const mainMenu = document.getElementById('mainMenu');
+    const topicViewer = document.getElementById('topicViewer');
+    const slidesContainer = document.getElementById('slidesContainer');
+    const viewerTitle = document.getElementById('viewerTopicTitle');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    function openTopic(topicKey) {
+        currentTopic = topicsData[topicKey];
+        currentSlideIndex = 0;
+        viewerTitle.innerText = currentTopic.title;
+        slidesContainer.innerHTML = '';
+
+        currentTopic.slides.forEach((slideData, index) => {
+            const slideDiv = document.createElement('div');
+            slideDiv.classList.add('slide');
+            if (index === 0) slideDiv.classList.add('active');
+
+            let extraContent = '';
+            
+            if(slideData.isVideo) {
+                extraContent = `<div style="margin-top:30px;"><video width="100%" style="max-width:500px; border:1px solid #333;" controls><source src="prichard.mp4" type="video/mp4"></video></div>`;
+            }
+
+            if(slideData.isComparison) {
+                extraContent = `
+                    <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px; flex-wrap: wrap;">
+                        <div style="text-align: center;">
+                            <img src="prichard_antes.jpg" style="width: 250px; height: 350px; object-fit: cover; border: 1px solid #333; filter: grayscale(100%);">
+                            <p style="font-size: 0.7rem; margin-top: 10px; letter-spacing: 2px;">ANTES (2015)</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <img src="prichard_depois.jpg" style="width: 250px; height: 350px; object-fit: cover; border: 1px solid #fff; box-shadow: 0 0 20px rgba(255,255,255,0.1);">
+                            <p style="font-size: 0.7rem; margin-top: 10px; letter-spacing: 2px; color: #fff;">DEPOIS (ATUAL)</p>
+                        </div>
+                    </div>`;
+            }
+
+            slideDiv.innerHTML = `<h4>${slideData.title}</h4><p>${slideData.text}</p>${extraContent}`;
+            slidesContainer.appendChild(slideDiv);
+        });
+
+        mainMenu.classList.add('hidden');
+        topicViewer.classList.add('active');
+        updateControls();
+    }
+
+    function closeTopic() {
+        mainMenu.classList.remove('hidden');
+        topicViewer.classList.remove('active');
+        const video = topicViewer.querySelector('video');
+        if(video) video.pause();
+    }
+
+    function changeSlide(direction) {
+        const slides = document.querySelectorAll('.slide');
+        slides[currentSlideIndex].classList.remove('active');
+        if (direction > 0) slides[currentSlideIndex].classList.add('exit');
+        
+        currentSlideIndex += direction;
+        const video = slidesContainer.querySelector('video');
+        if(video) video.pause();
+
+        slides[currentSlideIndex].classList.remove('exit');
+        slides[currentSlideIndex].classList.add('active');
+        updateControls();
+    }
+
+    function updateControls() {
+        prevBtn.disabled = (currentSlideIndex === 0);
+        nextBtn.disabled = (currentSlideIndex === currentTopic.slides.length - 1);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (!topicViewer.classList.contains('active')) return;
+        if (e.key === 'Escape') closeTopic();
+        if (e.key === 'ArrowRight' && !nextBtn.disabled) changeSlide(1);
+        if (e.key === 'ArrowLeft' && !prevBtn.disabled) changeSlide(-1);
+    });
+</script>
+</body>
+</html>

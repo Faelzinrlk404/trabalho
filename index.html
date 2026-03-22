@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intro 9B - Final Boss Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: black;
+            font-family: 'Orbitron', sans-serif;
+            perspective: 1500px;
+        }
+
+        /* Camada da Matrix (Verde, antes do 9B) */
+        #matrix { 
+            position: absolute; top: 0; left: 0; z-index: 1;
+            transition: opacity 1.2s ease;
+        }
+
+        /* Efeito de vinheta nas bordas */
+        .vignette-overlay {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; z-index: 2;
+            background: radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,1) 100%);
+        }
+
+        /* Overlay de Inicialização (Necessário para o navegador liberar o som) */
+        #init-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 100; display: flex; 
+            justify-content: center; align-items: center;
+        }
+        .init-btn {
+            background: none; border: 2px solid #fff; color: #fff;
+            padding: 20px 40px; font-family: 'Orbitron'; cursor: pointer;
+            letter-spacing: 5px; transition: 0.3s; font-size: 1.2rem;
+        }
+        .init-btn:hover { background: #fff; color: #000; box-shadow: 0 0 20px #fff; }
+
+        .container {
+            position: relative; z-index: 3;
+            display: flex; justify-content: center;
+            align-items: center; height: 100vh;
+        }
+
+        .name-display {
+            color: #ffffff;
+            font-size: 5rem;
+            text-transform: uppercase;
+            letter-spacing: 12px;
+            font-weight: 900;
+            display: none;
+            white-space: nowrap;
+        }
+
+        /* Estilo do 9B (Branco Puro e Sólido, sem verde) */
+        .logo-9b {
+            font-size: 15rem !important;
+            letter-spacing: 5px !important;
+            color: #ffffff;
+            /* Removi o brilho verde e mantive um brilho branco sutil */
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+        }
+
+        /* --- ANIMAÇÕES --- */
+        .coin-flip { display: inline-block !important; animation: flip360 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        @keyframes flip360 { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
+
+        .jump { animation: jumpEffect 0.5s ease-out forwards; }
+        @keyframes jumpEffect { 0% { transform: scale(1) translateY(0); } 50% { transform: scale(1.1) translateY(-80px); } 100% { transform: scale(1) translateY(0); } }
+
+        .exit-scene { animation: exitAnim 1s ease-in forwards; }
+        @keyframes exitAnim {
+            to { transform: scale(10); opacity: 0; filter: blur(40px); }
+        }
+
+        .fade-out { animation: fadeOutEffect 0.8s forwards; }
+        @keyframes fadeOutEffect { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
+
+        .cursor { display: inline-block; width: 15px; height: 60px; background-color: #00FF41; margin-left: 10px; animation: blink 0.7s infinite; vertical-align: middle; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="init-screen">
+        <button class="init-btn" onclick="startEverything()">INICIAR APRESENTAÇÃO</button>
+    </div>
+
+    <audio id="sound-impact"><source src="impacto.mp3" type="audio/mpeg"></audio>
+    <audio id="sound-jump"><source src="pulo.mp3" type="audio/mpeg"></audio>
+
+    <canvas id="matrix"></canvas>
+    <div class="vignette-overlay"></div>
+
+    <div class="container">
+        <span id="typing-text" class="name-display"></span>
+        <span id="cursor" class="cursor"></span>
+    </div>
+
+    <script>
+        const names = ["RAFAEL", "ERICK", "KAUÊ S."];
+        const lastLogo = "9B";
+        const typingSpeed = 100;
+        
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        const textElement = document.getElementById('typing-text');
+        const cursorElement = document.getElementById('cursor');
+        const initScreen = document.getElementById('init-screen');
+        const soundImpact = document.getElementById('sound-impact');
+        const soundJump = document.getElementById('sound-jump');
+
+        // Configuração Matrix
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const rainDrops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0F0';
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < rainDrops.length; i++) {
+                const text = characters.charAt(Math.floor(Math.random() * characters.length));
+                ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+                if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) rainDrops[i] = 0;
+                rainDrops[i]++;
+            }
+        }
+
+        let matrixInterval = setInterval(drawMatrix, 30);
+
+        // Efeito de Digitação (Silencioso)
+        async function typeEffect(name) {
+            textElement.style.display = "inline-block";
+            textElement.classList.remove('fade-out', 'logo-9b');
+            textElement.textContent = "";
+            cursorElement.style.display = "inline-block";
+            for (let char of name) {
+                textElement.textContent += char;
+                await new Promise(r => setTimeout(r, typingSpeed));
+            }
+        }
+
+        // Função chamada pelo botão
+        function startEverything() {
+            initScreen.style.display = 'none';
+            startSequence();
+        }
+
+        async function startSequence() {
+            await new Promise(r => setTimeout(r, 800));
+            
+            // Loop dos nomes
+            for (let name of names) {
+                await typeEffect(name);
+                await new Promise(r => setTimeout(r, 1500));
+                textElement.classList.add('fade-out');
+                cursorElement.style.display = "none";
+                await new Promise(r => setTimeout(r, 800));
+                textElement.style.display = "none";
+            }
+
+            // Transição para o 9B
+            canvas.style.opacity = "0";
+            await new Promise(r => setTimeout(r, 800));
+            clearInterval(matrixInterval);
+
+            // TOCA SOM DE IMPACTO NO SURGIMENTO
+            soundImpact.volume = 0.5;
+            soundImpact.play();
+
+            textElement.textContent = lastLogo;
+            textElement.classList.remove('fade-out');
+            textElement.classList.add('logo-9b', 'coin-flip');
+            textElement.style.display = "inline-block";
+            
+            // TOCA SOM DO PULO
+            setTimeout(() => {
+                soundJump.volume = 0.4;
+                soundJump.play();
+                textElement.classList.add('jump');
+            }, 1200);
+
+            // REDIRECIONAMENTO FINAL
+            setTimeout(() => {
+                textElement.classList.add('exit-scene');
+                setTimeout(() => {
+                    window.location.href = "intro_port.html";
+                }, 1000);
+            }, 4500);
+        }
+
+        window.onresize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+    </script>
+</body>
+</html>
